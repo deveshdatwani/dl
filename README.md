@@ -1,2 +1,2 @@
-# dl
-implementing deep learning models 
+# DL
+Paper implementation of deep learning models
