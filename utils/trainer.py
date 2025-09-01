@@ -8,7 +8,6 @@ def train_model(model, dataloader, criterion, optimizer, device, epochs=10, val_
         running_loss, running_corrects, total = 0.0, 0, 0
         for inputs, labels in dataloader:
             inputs, labels = inputs.to(device), labels.to(device)
-            
             optimizer.zero_grad()
             outputs = model(inputs)
             loss = criterion(outputs, labels)
