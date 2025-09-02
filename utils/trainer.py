@@ -1,19 +1,16 @@
 import torch
 import os
+import logging 
 
-def train_model(
-    model,
-    dataloader,
-    criterion,
-    optimizer,
-    device,
-    epochs=10,
-    val_dataloader=None,
-    scheduler=None,
-    grad_clip=None,
-    save_path="best_model.pth",
-    patience=5
-):
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+logging.basicConfig(level=logging.INFO)
+
+
+def train_model(model, dataloader, criterion, optimizer, device, epochs=10, 
+                val_dataloader=None, scheduler=None, grad_clip=None, save_path="best_model.pth", 
+                patience=5):
     best_val_loss = float("inf")
     patience_counter = 0
     model = model.to(device)
@@ -35,21 +32,21 @@ def train_model(
             total += labels.size(0)
         epoch_loss = running_loss / total
         epoch_acc = running_corrects / total
-        print(f"Epoch {epoch+1}/{epochs} - Loss: {epoch_loss:.4f}, Acc: {epoch_acc:.4f}")
+        logger.info(f"Epoch {epoch+1}/{epochs} - Loss: {epoch_loss:.4f}, Acc: {epoch_acc:.4f}")
         if scheduler:
             scheduler.step()
         if val_dataloader:
             val_loss, val_acc = validate_model(model, val_dataloader, criterion, device)
-            print(f"  Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}")
+            logger.info(f"  Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}")
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
                 patience_counter = 0
                 torch.save(model.state_dict(), save_path)
-                print("Best model saved!")
+                logger.info("Best model saved!")
             else:
                 patience_counter += 1
                 if patience_counter >= patience:
-                    print("Early stopping triggered.")
+                    logger.info("Early stopping triggered.")
                     return
 
 
