@@ -49,7 +49,7 @@ class transformer(nn.Module):
         return x
 
 
-class ViT(nn.Module):
+class vit(nn.Module):
     def __init__(self, depth=2, in_dim=192, inner_dim=64, heads=8, head_dim=64, num_classes=10, img_size=32, patch_size=8, in_channels=3):
         super().__init__()
         num_patches = (img_size // patch_size) ** 2
