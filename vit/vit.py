@@ -50,15 +50,25 @@ class transformer(nn.Module):
 
 
 class ViT(nn.Module):
-    def __init__(self, depth=2, in_dim=784, inner_dim=64, heads=8, head_dim=64):
+    def __init__(self, depth=2, in_dim=192, inner_dim=64, heads=8, head_dim=64, num_classes=10, img_size=32, patch_size=8, in_channels=3):
         super().__init__()
+        num_patches = (img_size // patch_size) ** 2
+        self.cls_token = nn.Parameter(torch.randn(1, 1, in_dim)) 
+        self.pos_embed = nn.Parameter(torch.randn(1, 1 + num_patches, in_dim))  # +1 for CLS
         self.layers = nn.ModuleList([transformer(in_dim, inner_dim, heads, head_dim) for _ in range(depth)])
-        self.final_layer = nn.Linear(48, 10)
-    
+        self.final_layer = nn.Linear(in_dim, num_classes)
+        self.patch_size = patch_size
+        self.in_channels = in_channels
+        self.in_dim = in_dim
+        self.cls_tokens = self.cls_token.expand(32, -1, -1)  
+
     def forward(self, x):
-        patch_size = 8
-        P1 = P2 = x.shape[-1] // patch_size
-        x = einops.rearrange(x, 'B C (H P1) (W P2) -> B (H W) (C P1 P2)', P1=P1, P2=P2)
+        P = self.patch_size
+        x = einops.rearrange(x, 'b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1=P, p2=P)
+        B = x.shape[0]
+        x = torch.cat([self.cls_tokens, x], dim=1)           
+        # x = x + self.pos_embed[:, :x.size(1), :]  # align pos_embed with sequence length
         for layer in self.layers:
             x = layer(x)
-        return self.final_layer(x).squeeze(1)
+        cls_out = x[:, 0, :]  
+        return self.final_layer(cls_out)

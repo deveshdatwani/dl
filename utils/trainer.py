@@ -33,6 +33,8 @@ def train_model(model, dataloader, criterion, optimizer, device, epochs=10,
         epoch_loss = running_loss / total
         epoch_acc = running_corrects / total
         logger.info(f"Epoch {epoch+1}/{epochs} - Loss: {epoch_loss:.4f}, Acc: {epoch_acc:.4f}")
+        torch.save(model.state_dict(), save_path)
+        logger.info("Saved model")
         if scheduler:
             scheduler.step()
         if val_dataloader:
