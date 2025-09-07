@@ -60,12 +60,12 @@ class vit(nn.Module):
         self.patch_size = patch_size
         self.in_channels = in_channels
         self.in_dim = in_dim
-        self.cls_tokens = self.cls_token.expand(32, -1, -1)  
 
     def forward(self, x):
         P = self.patch_size
         x = einops.rearrange(x, 'b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1=P, p2=P)
         B = x.shape[0]
+        self.cls_tokens = self.cls_token.expand(B, -1, -1)  
         x = torch.cat([self.cls_tokens, x], dim=1)           
         # x = x + self.pos_embed[:, :x.size(1), :]  # align pos_embed with sequence length
         for layer in self.layers:

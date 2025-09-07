@@ -1,10 +1,10 @@
-from vit.vit import ViT as vit_model
+from vit.vit import vit as vit_model
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from utils.trainer import train_model
 from torch import nn as nn
 import torch.optim as optim
-from torchvision import datasets, transforms
+from torchvision import datasets, transforms    
 
 
 model = vit_model(depth=10, in_dim=192, inner_dim=128)
