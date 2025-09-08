@@ -7,10 +7,10 @@ class feed_forward(nn.Module):
     def __init__(self, in_dim, inner_dim):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(in_dim, inner_dim),
-            nn.ReLU(),
-            nn.Linear(inner_dim, in_dim)
-        )
+                                nn.Linear(in_dim, inner_dim),
+                                nn.ReLU(),
+                                nn.Linear(inner_dim, in_dim)
+                                )
         self.norm = nn.LayerNorm(in_dim)
     
     def forward(self, x):
@@ -53,8 +53,8 @@ class vit(nn.Module):
     def __init__(self, depth=2, in_dim=192, inner_dim=64, heads=8, head_dim=64, num_classes=10, img_size=32, patch_size=8, in_channels=3):
         super().__init__()
         num_patches = (img_size // patch_size) ** 2
-        self.cls_token = nn.Parameter(torch.randn(1, 1, in_dim)) 
-        self.pos_embed = nn.Parameter(torch.randn(1, 1 + num_patches, in_dim))  # +1 for CLS
+        self.cls_token = nn.Parameter(torch.randn(1, 1, in_dim), requires_grad=False) 
+        self.pos_embed = nn.Parameter(torch.randn(1, 1 + num_patches, in_dim))  
         self.layers = nn.ModuleList([transformer(in_dim, inner_dim, heads, head_dim) for _ in range(depth)])
         self.final_layer = nn.Linear(in_dim, num_classes)
         self.patch_size = patch_size
@@ -67,7 +67,7 @@ class vit(nn.Module):
         B = x.shape[0]
         self.cls_tokens = self.cls_token.expand(B, -1, -1)  
         x = torch.cat([self.cls_tokens, x], dim=1)           
-        # x = x + self.pos_embed[:, :x.size(1), :]  # align pos_embed with sequence length
+        # x = x + self.pos_embed[:, :x.size(1), :] 
         for layer in self.layers:
             x = layer(x)
         cls_out = x[:, 0, :]  

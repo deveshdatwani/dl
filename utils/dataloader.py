@@ -5,6 +5,7 @@ from skimage.io import imread
 import numpy as np
 from skimage.segmentation import find_boundaries
 from matplotlib import pyplot as plt
+from skimage.transform import resize
 
 
 class BSDS500Dataset:
@@ -23,5 +24,5 @@ class BSDS500Dataset:
         mat = scipy.io.loadmat(self.gt_files[idx])
         gt_list = mat['groundTruth'][0]  
         gts = [gt_item[0,0]['Segmentation'] for gt_item in gt_list]
-        gts = np.stack(gts, axis=0)       
+        gts = np.stack(gts, axis=0)
         return img, gts
