@@ -5,7 +5,8 @@ from skimage.io import imread
 import numpy as np
 from skimage.segmentation import find_boundaries
 from matplotlib import pyplot as plt
-from skimage.transform import resize
+import torch.nn.functional as F
+import torch 
 
 
 class BSDS500Dataset:
@@ -24,5 +25,12 @@ class BSDS500Dataset:
         mat = scipy.io.loadmat(self.gt_files[idx])
         gt_list = mat['groundTruth'][0]  
         gts = [gt_item[0,0]['Segmentation'] for gt_item in gt_list]
-        gts = np.stack(gts, axis=0)
-        return img, gts
+        gts_np = np.stack(gts, axis=0)[2][None, :, :]
+        gts_tensor = torch.from_numpy(gts_np).unsqueeze(0).float()
+        resized_tensor = F.interpolate(gts_tensor, size=(400, 400), mode='nearest')
+        mask = resized_tensor.squeeze().numpy().astype(np.uint8)
+        img = torch.from_numpy(img).float()  
+        img = img.permute(2, 0, 1).unsqueeze(0)  
+        img = F.interpolate(img, size=(400, 400), mode='nearest')  
+        img = img.squeeze(0).permute(1, 2, 0).byte().numpy() 
+        return img, find_boundaries(mask, mode='outer')

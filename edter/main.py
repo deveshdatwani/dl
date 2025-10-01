@@ -4,10 +4,9 @@ from matplotlib import pyplot as plt
 
 
 dataset = BSDS500Dataset('/home/deveshdatwani/dl/data/bsds500', split='train')
-img, gts = dataset[0]
-seg = gts[0]
-edges = find_boundaries(seg, mode='outer')
-plt.imshow(edges, cmap='gray')
-plt.axis('off')
-plt.title("Edge map from segmentation")
+img, gts = dataset[150]
+fig, axs = plt.subplots(1, 2, figsize=(128, 128)) 
+axs[0].imshow(gts, cmap='gray')
+axs[1].imshow(img)
+plt.tight_layout()
 plt.show()
