@@ -1,6 +1,7 @@
 import torch 
 from torch import nn 
 import einops
+from numpy import sqrt
 
 
 class feed_forward(nn.Module):
@@ -43,14 +44,13 @@ class attention(nn.Module):
         
 
 class transformer(nn.Module):
-    def __init__(self, in_dim=128, inner_dim=64, heads=8, head_dim=64):
+    def __init__(self, in_dim=192, inner_dim=192, heads=8, head_dim=64):
         super().__init__()
-        self.attend = attention(in_dim, heads, head_dim)
-        self.norm1 = nn.LayerNorm(in_dim)
+        self.attend = attention(heads=8, head_dim=64, inner_dim=192)
         self.ff = feed_forward(in_dim, inner_dim)
     
     def forward(self, x):
-        x = self.norm1(self.attend(x) + x)
+        x = self.attend(x)
         x = self.ff(x)
         return x
 
