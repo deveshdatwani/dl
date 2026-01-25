@@ -6,7 +6,6 @@ from torch import nn as nn
 import torch.optim as optim
 from torchvision import datasets, transforms    
 
-
 model = vit_model(depth=10, in_dim=192, inner_dim=128)
 transform = transforms.Compose([
     transforms.ToTensor(),
