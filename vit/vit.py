@@ -1,7 +1,7 @@
 import torch 
 from torch import nn 
 import einops
-from numpy import sqrt
+from math import sqrt
 
 
 class feed_forward(nn.Module):
@@ -36,7 +36,7 @@ class attention(nn.Module):
         xx = []
         for head in x:
             q, k, v = self.to_qkv(head).chunk(3, -1)
-            attention = self.sm(torch.matmul(q, k.transpose(-2, -1)) * 1 / sqrt(q.shape[-1]))
+            attention = self.sm(torch.matmul(q, k.transpose(-2, -1)) * sqrt(q.shape[-1]))
             kv = torch.matmul(attention, v)
             xx.append(kv)
         x = torch.cat(xx, dim=-1)
