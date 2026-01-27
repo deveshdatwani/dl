@@ -12,6 +12,7 @@ from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from torch import nn
 import torch.optim as optim
+from optim.post_training import quantize_dynamic
 
 MODEL_REGISTRY = {
     "vit": vit,
@@ -54,6 +55,13 @@ def main():
     device = config.get('device', 'cpu')
     train_model(model=model, dataloader=train_dataloader, criterion=criterion, optimizer=optimizer, 
                 epochs=config.get('epochs', 10), save_path=config.get('save_path', "./checkpoint/model.pth"), device=device)
+
+    # Post-training quantization (optional)
+    if config.get('quantize', False):
+        print("Applying dynamic quantization...")
+        quantized_model = quantize_dynamic(model)
+        torch.save(quantized_model.state_dict(), config.get('quantized_save_path', './checkpoint/model_quantized.pth'))
+        print(f"Quantized model saved to {config.get('quantized_save_path', './checkpoint/model_quantized.pth')}")
 
 if __name__ == "__main__":
     main()

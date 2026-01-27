@@ -10,6 +10,7 @@ Modular Deep Learning Framework
 - `utils/` — Data loaders, loss functions, trainer utilities
 - `tests/` — Unit tests for models and training
 
+
 ## Getting Started
 
 1. Install requirements:
@@ -20,6 +21,16 @@ Modular Deep Learning Framework
 	```bash
 	python train/train.py --model vit --dataset cifar10 --config train/config.yaml
 	```
+3. (Optional) Enable post-training quantization:
+	- Add `quantize: true` to your `train/config.yaml`.
+	- Optionally set `quantized_save_path: ./checkpoint/model_quantized.pth`.
+
+## Post-Training Optimization
+
+You can apply post-training quantization to reduce model size and improve inference speed:
+
+- Dynamic quantization is supported out of the box. After training, if `quantize: true` is set in your config, a quantized model will be saved.
+- See `optim/post_training.py` for more utilities (static quantization, etc).
 
 ## Adding a New Model
 
