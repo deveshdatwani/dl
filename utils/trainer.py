@@ -17,7 +17,8 @@ def _atomic_save(obj, path):
 def train_model(
     model, dataloader, criterion, optimizer, device,
     epochs=10, val_dataloader=None, scheduler=None,
-    grad_clip=None, save_path="best_model.pth", patience=5
+    grad_clip=None, save_path="best_model.pth", patience=5,
+    wandb_run=None
 ):
     if len(dataloader) == 0:
         raise ValueError("Train dataloader is empty")
@@ -58,11 +59,15 @@ def train_model(
             raise ValueError("No samples processed in training epoch")
         train_loss = running_loss / total
         train_acc = correct / total
+        if wandb_run:
+            wandb_run.log({"epoch": epoch+1, "train/loss": train_loss, "train/acc": train_acc})
         logger.info(f"Epoch {epoch+1}/{epochs} - Loss {train_loss:.4f} Acc {train_acc:.4f}")
         val_loss = None
         if val_dataloader:
             val_loss, val_acc = validate_model(model, val_dataloader, criterion, device)
             logger.info(f"Val Loss {val_loss:.4f} Acc {val_acc:.4f}")
+            if wandb_run:
+                wandb_run.log({"epoch": epoch+1, "val/loss": val_loss, "val/acc": val_acc})
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
                 patience_counter = 0

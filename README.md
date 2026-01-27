@@ -1,3 +1,19 @@
+# DL Training Module
+## Logging Training to Weights & Biases
+
+To enable experiment tracking with [Weights & Biases (wandb)](https://wandb.ai/):
+
+1. Install dependencies:
+	```bash
+	pip install -r requirements.txt
+	```
+2. Run your training script with the `--wandb` flag:
+	```bash
+	python train/train.py --model vit --dataset cifar10 --config train/config.yaml --wandb
+	```
+3. Optionally, set your project name in the config YAML with `wandb_project: <your_project>`.
+
+This will log metrics like loss and accuracy to your wandb dashboard.
 # DL
 
 Modular Deep Learning Framework
