@@ -3,20 +3,18 @@ from torch import nn
 import einops
 from math import sqrt
 
-
 class feed_forward(nn.Module):
+    """Feed-forward block for transformer models."""
     def __init__(self, in_dim, inner_dim):
         super().__init__()
         self.net = nn.Sequential(
-                                nn.Linear(in_dim, inner_dim),
-                                nn.ReLU(),
-                                nn.Linear(inner_dim, in_dim)
-                                )
+            nn.Linear(in_dim, inner_dim),
+            nn.ReLU(),
+            nn.Linear(inner_dim, in_dim)
+        )
         self.norm = nn.LayerNorm(in_dim)
-    
     def forward(self, x):
         return self.norm(self.net(x) + x)
-    
 
 class attention(nn.Module):
     def __init__(self, in_dim, heads=8, head_dim=64):
@@ -35,21 +33,20 @@ class attention(nn.Module):
         attn = attn.softmax(dim=-1)
         out = torch.matmul(attn, v).transpose(1, 2).reshape(B, N, self.heads * self.head_dim)
         return self.proj(out)
-        
 
 class transformer(nn.Module):
+    """Transformer block combining attention and feed-forward."""
     def __init__(self, in_dim=192, inner_dim=192, heads=8, head_dim=64):
         super().__init__()
         self.attend = attention(heads=8, head_dim=64, inner_dim=192)
         self.ff = feed_forward(in_dim, inner_dim)
-    
     def forward(self, x):
         x = self.attend(x)
         x = self.ff(x)
         return x
 
-
 class vit(nn.Module):
+    """Vision Transformer (ViT) implementation."""
     def __init__(self, depth=2, in_dim=192, inner_dim=64, heads=8, head_dim=64, num_classes=10, img_size=32, patch_size=8, in_channels=3):
         super().__init__()
         num_patches = (img_size // patch_size) ** 2
@@ -60,7 +57,6 @@ class vit(nn.Module):
         self.patch_size = patch_size
         self.in_channels = in_channels
         self.in_dim = in_dim
-
     def forward(self, x):
         P = self.patch_size
         x = einops.rearrange(x, 'b c (h p1) (w p2) -> b (h w) (c p1 p2)', p1=P, p2=P)

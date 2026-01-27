@@ -1,4 +1,5 @@
 from vit.vit import vit as vit_model
+from models.vit import vit as vit_model
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from utils.trainer import train_model
