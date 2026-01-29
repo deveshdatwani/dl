@@ -17,14 +17,22 @@ from optim.post_training import quantize_dynamic
 # Weights & Biases
 import wandb
 
-MODEL_REGISTRY = {
-    "vit": vit,
-    # Add more models here
-}
+
+import importlib
+
+def get_model_class(model_path):
+    """
+    Dynamically import a model class from a module path string.
+    Example: models.vit.ViT
+    """
+    module_name, class_name = model_path.rsplit('.', 1)
+    module = importlib.import_module(module_name)
+    return getattr(module, class_name)
 
 def main():
+
     parser = argparse.ArgumentParser(description="Train DL models modularly")
-    parser.add_argument('--model', type=str, default='vit', help='Model name')
+    parser.add_argument('--model', type=str, required=True, help='Model class path, e.g. models.vit.ViT')
     parser.add_argument('--dataset', type=str, default='cifar10', help='Dataset name')
     parser.add_argument('--config', type=str, default=None, help='Path to config YAML')
     parser.add_argument('--wandb', action='store_true', help='Enable Weights & Biases logging')
@@ -40,10 +48,12 @@ def main():
     if args.wandb:
         wandb.init(project=config.get('wandb_project', 'dl-training'), config=config)
 
-    # Model selection
-    model_cls = MODEL_REGISTRY.get(args.model)
-    if not model_cls:
-        raise ValueError(f"Model {args.model} not found")
+
+    # Model import and instantiation
+    try:
+        model_cls = get_model_class(args.model)
+    except (ImportError, AttributeError) as e:
+        raise ImportError(f"Could not import model class from '{args.model}': {e}")
     model = model_cls(**config.get('model', {}))
 
     # Dataset selection
