@@ -1,32 +1,11 @@
-import torch, os, logging, math, tempfile, argparse, yaml, importlib
-import wandb
+
+import torch, os, logging, math, tempfile
 
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-def load_config(yaml_path, cli_args=None):
-    with open(yaml_path, 'r') as f:
-        config = yaml.safe_load(f)
-    if cli_args:
-        # Override YAML with CLI args if provided
-        for k, v in vars(cli_args).items():
-            if v is not None:
-                # Support nested keys (e.g., model.name)
-                keys = k.split('__')
-                d = config
-                for key in keys[:-1]:
-                    d = d.setdefault(key, {})
-                d[keys[-1]] = v
-    return config
 
-def prompt_user_config(config):
-    print("\n===== Training Configuration =====")
-    print(yaml.dump(config, sort_keys=False, default_flow_style=False))
-    resp = input("Proceed with these settings? (y/n): ").strip().lower()
-    if resp != 'y':
-        print("Aborted by user.")
-        exit(0)
 
 def _check_tensor(x, name):
     if torch.isnan(x).any() or torch.isinf(x).any():
