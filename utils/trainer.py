@@ -1,7 +1,32 @@
-import torch, os, logging, math, tempfile
+import torch, os, logging, math, tempfile, argparse, yaml, importlib
+import wandb
+
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
+
+def load_config(yaml_path, cli_args=None):
+    with open(yaml_path, 'r') as f:
+        config = yaml.safe_load(f)
+    if cli_args:
+        # Override YAML with CLI args if provided
+        for k, v in vars(cli_args).items():
+            if v is not None:
+                # Support nested keys (e.g., model.name)
+                keys = k.split('__')
+                d = config
+                for key in keys[:-1]:
+                    d = d.setdefault(key, {})
+                d[keys[-1]] = v
+    return config
+
+def prompt_user_config(config):
+    print("\n===== Training Configuration =====")
+    print(yaml.dump(config, sort_keys=False, default_flow_style=False))
+    resp = input("Proceed with these settings? (y/n): ").strip().lower()
+    if resp != 'y':
+        print("Aborted by user.")
+        exit(0)
 
 def _check_tensor(x, name):
     if torch.isnan(x).any() or torch.isinf(x).any():
@@ -82,6 +107,72 @@ def train_model(
                 if patience_counter >= patience:
                     logger.info("Early stopping")
                     return
+        def get_loss_fn(loss_cfg):
+            typ = loss_cfg.get('type', 'cross_entropy')
+            if typ == 'cross_entropy':
+                return torch.nn.CrossEntropyLoss(**loss_cfg.get('params', {}))
+            elif typ == 'focal':
+                # Example: expects FocalLoss in utils.loss
+                from dl.utils.loss import FocalLoss
+                return FocalLoss(**loss_cfg.get('params', {}))
+            else:
+                raise ValueError(f"Unknown loss type: {typ}")
+
+        def get_model(model_cfg):
+            src = model_cfg.get('source', 'custom')
+            name = model_cfg.get('name')
+            if src == 'custom':
+                mod = importlib.import_module(f'dl.models.custom.{name}')
+                return getattr(mod, name)()
+            elif src == 'cloned':
+                mod = importlib.import_module(f'dl.models.cloned.{name}')
+                return getattr(mod, name)()
+            elif src == 'huggingface':
+                from transformers import AutoModel
+                return AutoModel.from_pretrained(name)
+            else:
+                raise ValueError(f"Unknown model source: {src}")
+
+        def main():
+            parser = argparse.ArgumentParser(description="Trainer CLI")
+            parser.add_argument('--config', type=str, default='dl/utils/trainer_config.yaml', help='Path to config YAML')
+            parser.add_argument('--model__source', type=str, help='Model source: custom, cloned, huggingface')
+            parser.add_argument('--model__name', type=str, help='Model name')
+            parser.add_argument('--model__path', type=str, help='Model path')
+            parser.add_argument('--dataset__name', type=str, help='Dataset name')
+            parser.add_argument('--dataset__path', type=str, help='Dataset path')
+            parser.add_argument('--loss__type', type=str, help='Loss type')
+            parser.add_argument('--wandb__project', type=str, help='wandb project name')
+            parser.add_argument('--wandb__plot_name', type=str, help='wandb plot name')
+            parser.add_argument('--run__mode', type=str, help='Run mode: train, validate, deploy')
+            parser.add_argument('--run__epochs', type=int, help='Epochs')
+            parser.add_argument('--run__batch_size', type=int, help='Batch size')
+            parser.add_argument('--run__learning_rate', type=float, help='Learning rate')
+            parser.add_argument('--run__seed', type=int, help='Random seed')
+            args = parser.parse_args()
+
+            config = load_config(args.config, args)
+            prompt_user_config(config)
+
+            # Set random seed
+            if 'seed' in config.get('run', {}):
+                torch.manual_seed(config['run']['seed'])
+
+            # Setup wandb
+            wandb_run = wandb.init(
+                project=config['wandb']['project'],
+                name=config['wandb']['plot_name'],
+                config=config
+            )
+
+            # Load model and loss
+            model = get_model(config['model'])
+            loss_fn = get_loss_fn(config['loss'])
+            # ...existing code to load data, optimizer, etc...
+            # Example: train_model(model, train_loader, loss_fn, optimizer, device, ...)
+
+        if __name__ == "__main__":
+            main()
         if scheduler:
             if "ReduceLROnPlateau" in scheduler.__class__.__name__:
                 if val_loss is None:
