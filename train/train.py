@@ -51,13 +51,15 @@ def main():
     parser.add_argument('--wandb__plot_name', type=str, help='wandb plot name')
     parser.add_argument('--dataset__name', type=str, help='Dataset name')
     parser.add_argument('--dataset__path', type=str, help='Dataset path')
-    parser.add_argument('--run__batch_size', type=int, help='Batch size')
-    parser.add_argument('--run__lr', type=float, help='Learning rate')
-    parser.add_argument('--run__epochs', type=int, help='Epochs')
-    parser.add_argument('--run__save_path', type=str, help='Save path')
-    parser.add_argument('--run__device', type=str, help='Device')
-    parser.add_argument('--run__quantize', type=bool, help='Quantize model')
-    parser.add_argument('--run__quantized_save_path', type=str, help='Quantized save path')
+    parser.add_argument('--batch_size', type=int, help='Batch size')
+    parser.add_argument('--lr', type=float, help='Learning rate')
+    parser.add_argument('--epochs', type=int, help='Epochs')
+    parser.add_argument('--save_path', type=str, help='Save path')
+    parser.add_argument('--device', type=str, help='Device')
+    parser.add_argument('--quantize', type=bool, help='Quantize model')
+    parser.add_argument('--quantized_save_path', type=str, help='Quantized save path')
+    parser.add_argument('--optimizer__type', type=str, help='Optimizer type (adam, sgd, etc.)')
+    parser.add_argument('--optimizer__params', type=str, help='Optimizer params as YAML/JSON string (optional)')
     args = parser.parse_args()
 
     # Load config and override with CLI args
@@ -65,11 +67,16 @@ def main():
         config = yaml.safe_load(f)
     for k, v in vars(args).items():
         if v is not None and k != 'config':
-            keys = k.split('__')
-            d = config
-            for key in keys[:-1]:
-                d = d.setdefault(key, {})
-            d[keys[-1]] = v
+            # Map flat CLI args to config['run'] if they match run keys
+            run_keys = ['batch_size', 'lr', 'epochs', 'save_path', 'device', 'quantize', 'quantized_save_path']
+            if k in run_keys:
+                config.setdefault('run', {})[k] = v
+            else:
+                keys = k.split('__')
+                d = config
+                for key in keys[:-1]:
+                    d = d.setdefault(key, {})
+                d[keys[-1]] = v
 
     # Print config and confirm
     print("\n===== Training Configuration =====")
@@ -104,7 +111,19 @@ def main():
     train_dataloader = DataLoader(train_dataset, batch_size=run_cfg.get('batch_size', 32))
     test_dataloader = DataLoader(test_dataset, batch_size=run_cfg.get('batch_size', 32))
 
-    optimizer = optim.Adam(model.parameters(), lr=run_cfg.get('lr', 1e-4))
+    # Optimizer selection
+    opt_cfg = config.get('optimizer', {})
+    opt_type = opt_cfg.get('type', 'adam').lower()
+    opt_params = opt_cfg.get('params', {})
+    if args.optimizer__params:
+        import yaml as _yaml
+        opt_params = _yaml.safe_load(args.optimizer__params)
+    if opt_type == 'adam':
+        optimizer = optim.Adam(model.parameters(), lr=run_cfg.get('lr', 1e-4), **opt_params)
+    elif opt_type == 'sgd':
+        optimizer = optim.SGD(model.parameters(), lr=run_cfg.get('lr', 1e-4), **opt_params)
+    else:
+        raise ValueError(f"Unsupported optimizer type: {opt_type}")
     device = run_cfg.get('device', 'cpu')
 
     # Train

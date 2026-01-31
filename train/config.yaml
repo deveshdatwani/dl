@@ -1,3 +1,6 @@
+optimizer:
+  type: adam           # adam, sgd, etc.
+  params: {}           # e.g., {"weight_decay": 0.01}
 
 # Modular config for model, loss, wandb, and training
 model:
