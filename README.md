@@ -1,21 +1,4 @@
-
-# ddms: Devesh's Deep Model Suite
-
-**ddms** is a modular deep learning training system built for flexibility, reproducibility, and rapid experimentation.
-
-## Key Features
-
-- 🔌 Plug-and-play models: Custom, cloned, or Hugging Face
-- 🧮 Custom loss and optimizer support
-- 📝 YAML config + CLI override (CLI always wins)
-- 📊 Weights & Biases (wandb) logging with custom run names
-- 🛑 Always prints config and asks for confirmation before running
-
----
-
-## How to Use ddms
-
-ddms Devesh's Deep Model Suite
+How to use ddms [Devesh's Deep Model Suite]
 
 How to use ddms
 
