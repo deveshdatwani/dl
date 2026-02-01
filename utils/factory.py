@@ -11,6 +11,8 @@ from optim.post_training import quantize_dynamic
 
 
 def get_model(model_cfg):
+    from models.cloned.cifar.models.vgg import VGG
+    return VGG()
     src = model_cfg.get('source', 'custom')
     name = model_cfg.get('name')
     if src == 'custom':
