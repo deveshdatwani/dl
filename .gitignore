@@ -16,6 +16,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+
+models/cloned/cifar/
+
+
 # C extensions
 *.so
 
