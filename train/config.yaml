@@ -5,7 +5,7 @@ optimizer:
 model:
   source: models.cloned.cifar.models.vgg.VGG      
   name: cifar-cnn             
-  
+
 loss:
   type: cross_entropy    
   params: {}
