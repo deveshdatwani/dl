@@ -1,3 +1,7 @@
 torch
 einops
 wandb
+scipy
+scikit-image
+matplotlib
+pyyaml
