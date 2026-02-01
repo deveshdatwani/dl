@@ -17,7 +17,7 @@ __pycache__/
 *$py.class
 
 
-models/cloned/cifar/
+models/cloned/*
 
 
 # C extensions
