@@ -1,25 +1,24 @@
 optimizer:
-  type: adam           # adam, sgd, etc.
-  params: {}           # e.g., {"weight_decay": 0.01}
+  type: sgd        
+  params: {}           
 
-# Modular config for model, loss, wandb, and training
 model:
-  source: custom         # custom, cloned, huggingface
-  name: vit              # model name or huggingface id
-  depth: 10
-  in_dim: 192
-  inner_dim: 128
-  num_classes: 10
-  img_size: 32
-  patch_size: 8
-  in_channels: 3
+  source: models.cloned.cifar.models.vgg.VGG      
+  name: cifar-cnn             
+  # depth: 10
+  # in_dim: 192
+  # inner_dim: 128
+  # num_classes: 10
+  # img_size: 32
+  # patch_size: 8
+  # in_channels: 3
 
 loss:
-  type: cross_entropy    # cross_entropy, focal, etc.
+  type: cross_entropy    
   params: {}
 
 wandb:
-  project: dl-training
+  project: cifar-10-cnn
   plot_name: experiment_1
 
 dataset:
@@ -30,7 +29,7 @@ run:
   batch_size: 32
   lr: 0.0001
   epochs: 10
-  save_path: "./checkpoint/cifar_transformer.pth"
+  save_path: "./checkpoint/cifar_vgg.pth"
   device: "cpu"
   quantize: false
   quantized_save_path: "./checkpoint/model_quantized.pth"

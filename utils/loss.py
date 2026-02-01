@@ -15,8 +15,3 @@ class edge_loss(nn.Module):
                         )
         return loss
     
-
-el = edge_loss()
-x = torch.rand((3, 128, 128))
-y = torch.rand((3, 128, 128))
-print(el(x, y))
