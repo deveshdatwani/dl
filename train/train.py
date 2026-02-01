@@ -1,18 +1,15 @@
-"""
-Modular training entry point for DL models
-Usage:
-    python train.py --model vit --dataset cifar10 --config config.yaml
-"""
-
-
 import argparse
 import yaml
 import torch
 import wandb
+import logging
 from utils.trainer import train_model
 from utils.factory import get_model, get_loss_fn, get_optimizer, get_dataloaders
 from optim.post_training import quantize_dynamic
+from utils.factory import load_and_override_config
 
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 def main():
     parser = argparse.ArgumentParser(description="Train DL models modularly")
@@ -34,35 +31,13 @@ def main():
     parser.add_argument('--optimizer-type', type=str, help='Optimizer type (adam, sgd, etc.)')
     parser.add_argument('--optimizer-params', type=str, help='Optimizer params as YAML/JSON string (optional)')
     args = parser.parse_args()
-
-    # Load config and override with CLI args
-    with open(args.config) as f:
-        config = yaml.safe_load(f)
-    for k, v in vars(args).items():
-        if v is not None and k != 'config':
-            run_keys = ['batch_size', 'lr', 'epochs', 'save_path', 'device', 'quantize', 'quantized_save_path']
-            if k in run_keys:
-                config.setdefault('run', {})[k] = v
-            else:
-                keys = k.split('__')
-                d = config
-                for key in keys[:-1]:
-                    d = d.setdefault(key, {})
-                d[keys[-1]] = v
-
-    print("\n===== Training Configuration =====")
-    print(yaml.dump(config, sort_keys=False, default_flow_style=False))
+    config = load_and_override_config(args)
+    logger.info("===== Training Configuration =====\n%s", yaml.dump(config, sort_keys=False, default_flow_style=False))
     resp = input("Proceed with these settings? (y/n): ").strip().lower()
     if resp != 'y':
-        print("Aborted by user.")
+        logger.info("Aborted by user.")
         exit(0)
-
-    wandb_run = wandb.init(
-        project=config['wandb']['project'],
-        name=config['wandb']['plot_name'],
-        config=config
-    ) if 'wandb' in config and config['wandb'].get('project') else None
-
+    wandb_run = wandb.init(project=config['wandb']['project'], name=config['wandb']['plot_name'], config=config) if 'wandb' in config and config['wandb'].get('project') else None
     model = get_model(config['model'])
     loss_fn = get_loss_fn(config['loss'])
     run_cfg = config.get('run', {})
@@ -70,24 +45,12 @@ def main():
     train_dataloader, test_dataloader = get_dataloaders(ds_cfg, run_cfg)
     optimizer = get_optimizer(config.get('optimizer', {}), model.parameters(), run_cfg.get('lr', 1e-4))
     device = run_cfg.get('device', 'cpu')
-
-    train_model(
-        model=model,
-        dataloader=train_dataloader,
-        criterion=loss_fn,
-        optimizer=optimizer,
-        epochs=run_cfg.get('epochs', 10),
-        save_path=run_cfg.get('save_path', "./checkpoint/model.pth"),
-        device=device,
-        wandb_run=wandb_run
-    )
-
+    train_model(model=model, dataloader=train_dataloader, criterion=loss_fn, optimizer=optimizer, epochs=run_cfg.get('epochs', 10), save_path=run_cfg.get('save_path', "./checkpoint/model.pth"), device=device, wandb_run=wandb_run)
     if run_cfg.get('quantize', False):
-        print("Applying dynamic quantization...")
+        logger.info("Applying dynamic quantization...")
         quantized_model = quantize_dynamic(model)
         torch.save(quantized_model.state_dict(), run_cfg.get('quantized_save_path', './checkpoint/model_quantized.pth'))
-        print(f"Quantized model saved to {run_cfg.get('quantized_save_path', './checkpoint/model_quantized.pth')}")
-
+        logger.info("Quantized model saved to %s", run_cfg.get('quantized_save_path', './checkpoint/model_quantized.pth'))
 
 if __name__ == "__main__":
     main()

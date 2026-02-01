@@ -5,14 +5,7 @@ optimizer:
 model:
   source: models.cloned.cifar.models.vgg.VGG      
   name: cifar-cnn             
-  # depth: 10
-  # in_dim: 192
-  # inner_dim: 128
-  # num_classes: 10
-  # img_size: 32
-  # patch_size: 8
-  # in_channels: 3
-
+  
 loss:
   type: cross_entropy    
   params: {}
@@ -23,7 +16,7 @@ wandb:
 
 dataset:
   name: cifar10
-  path: ../data/cifar-10-batches-py
+  path: data/cifar-10-batches-py
   train_split: 0.8
 
 run:

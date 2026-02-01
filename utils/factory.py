@@ -3,6 +3,7 @@ Factory functions for model, loss, optimizer, and dataset creation
 """
 import importlib
 import torch
+import yaml
 from torch import nn
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
@@ -64,3 +65,24 @@ def get_dataloaders(ds_cfg, run_cfg):
     train_dataloader = DataLoader(train_dataset, batch_size=run_cfg.get('batch_size', 32))
     test_dataloader = DataLoader(test_dataset, batch_size=run_cfg.get('batch_size', 32))
     return train_dataloader, test_dataloader
+
+def load_and_override_config(args):
+    with open(args.config) as f:
+        config = yaml.safe_load(f)
+    def get_nested(cfg, keys):
+        for k in keys:
+            if not isinstance(cfg, dict) or k not in cfg:
+                return None
+            cfg = cfg[k]
+        return cfg
+    def set_nested(cfg, keys, value):
+        for k in keys[:-1]:
+            cfg = cfg.setdefault(k, {})
+        cfg[keys[-1]] = value
+    for arg, value in vars(args).items():
+        if value is None or arg == 'config':
+            continue
+        keys = arg.split('__')
+        if get_nested(config, keys) is not None:
+            set_nested(config, keys, value)
+    return config
