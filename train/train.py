@@ -4,31 +4,31 @@ import torch
 import wandb
 import logging
 from utils.trainer import train_model
-from utils.factory import get_model, get_loss_fn, get_optimizer, get_dataloaders
+from utils.train_factory import get_model, get_loss_fn, get_optimizer, get_dataloaders, load_and_override_config, quantize_model
 from optim.post_training import quantize_dynamic
-from utils.factory import load_and_override_config
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(level=logging.INFO)
 
 def main():
     parser = argparse.ArgumentParser(description="Train DL models modularly")
-    parser.add_argument('--config', type=str, default='train/config.yaml', help='Path to config YAML')
+    parser.add_argument('--config_yaml', type=str, default='train/config.yaml', help='Path to config YAML')
     parser.add_argument('--model-source', type=str, help='Model source: custom, cloned, huggingface')
     parser.add_argument('--model-name', type=str, help='Model name or huggingface id')
-    parser.add_argument('--loss-type', type=str, help='Loss type')
+    parser.add_argument('--loss-fn', type=str, help='Loss type')
     parser.add_argument('--wandb-project', type=str, help='wandb project name')
     parser.add_argument('--wandb-plot-name', type=str, help='wandb plot name')
     parser.add_argument('--dataset-name', type=str, help='Dataset name')
     parser.add_argument('--dataset-path', type=str, help='Dataset path')
     parser.add_argument('--batch-size', type=int, help='Batch size')
     parser.add_argument('--lr', type=float, help='Learning rate')
+    parser.add_argument('--train-split', type=float, help='Train/test split')
     parser.add_argument('--epochs', type=int, help='Epochs')
     parser.add_argument('--save-path', type=str, help='Save path')
     parser.add_argument('--device', type=str, help='Device')
     parser.add_argument('--quantize', type=bool, help='Quantize model')
     parser.add_argument('--quantized-save-path', type=str, help='Quantized save path')
-    parser.add_argument('--optimizer-type', type=str, help='Optimizer type (adam, sgd, etc.)')
+    parser.add_argument('--optimizer', type=str, help='Optimizer type (adam, sgd, etc.)')
     parser.add_argument('--optimizer-params', type=str, help='Optimizer params as YAML/JSON string (optional)')
     args = parser.parse_args()
     config = load_and_override_config(args)
@@ -38,19 +38,13 @@ def main():
         logger.info("Aborted by user.")
         exit(0)
     wandb_run = wandb.init(project=config['wandb']['project'], name=config['wandb']['plot_name'], config=config) if 'wandb' in config and config['wandb'].get('project') else None
-    model = get_model(config['model'])
-    loss_fn = get_loss_fn(config['loss'])
-    run_cfg = config.get('run', {})
-    ds_cfg = config.get('dataset', {})
-    train_dataloader, test_dataloader = get_dataloaders(ds_cfg, run_cfg)
-    optimizer = get_optimizer(config.get('optimizer', {}), model.parameters(), run_cfg.get('lr', 1e-4))
-    device = run_cfg.get('device', 'cpu')
-    train_model(model=model, dataloader=train_dataloader, criterion=loss_fn, optimizer=optimizer, epochs=run_cfg.get('epochs', 10), save_path=run_cfg.get('save_path', "./checkpoint/model.pth"), device=device, wandb_run=wandb_run)
-    if run_cfg.get('quantize', False):
-        logger.info("Applying dynamic quantization...")
-        quantized_model = quantize_dynamic(model)
-        torch.save(quantized_model.state_dict(), run_cfg.get('quantized_save_path', './checkpoint/model_quantized.pth'))
-        logger.info("Quantized model saved to %s", run_cfg.get('quantized_save_path', './checkpoint/model_quantized.pth'))
+    model = get_model(config['model_source'])
+    loss_fn = get_loss_fn(typ=config['loss_fn'], optimizer_params=config.get('loss_params', {}))
+    train_dataloader, test_dataloader = get_dataloaders(config['dataset_path'], config['dataset_name'], config['train_split'], config['batch_size'])
+    optimizer = get_optimizer(config['optimizer'], model.parameters(), config['lr'], config['optimizer_params'])
+    device = config.get('device', 'cpu')
+    train_model(model=model, dataloader=train_dataloader, criterion=loss_fn, optimizer=optimizer, epochs=config.get('epochs', 10), save_path=config.get('save_path', "./checkpoint/model.pth"), device=device, wandb_run=wandb_run)
+    if config.get('quantize', False): quantize_model(model)
 
 if __name__ == "__main__":
     main()
