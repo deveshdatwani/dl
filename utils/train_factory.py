@@ -75,3 +75,9 @@ def quantize_model(model, config):
     quantized_model = quantize_dynamic(model)
     torch.save(quantized_model.state_dict(), config.get('quantized_save_path', './checkpoint/model_quantized.pth'))
     logger.info("Quantized model saved to %s", config.get('quantized_save_path', './checkpoint/model_quantized.pth'))
+
+def schedule(scheduler, val_dataloader, val_loss):
+    if val_dataloader and "ReduceLROnPlateau" in scheduler.__class__.__name__:
+        scheduler.step(val_loss)
+    else:
+        scheduler.step()
