@@ -20,7 +20,7 @@ def train_model(model, dataloader, criterion, optimizer, device, epochs=10,
     for epoch in range(epochs):
         logger.info(f"Epoch {epoch+1}/{epochs} start")
         try:
-            train_loss, train_acc = train_one_epoch(model, dataloader, criterion, optimizer, device, grad_clip=grad_clip, wandb_run=wandb_run)
+            train_loss, train_acc = train_one_epoch(model, dataloader, criterion, optimizer, device, grad_clip=grad_clip, wandb_run=wandb_run, epoch=epoch)
             atomic_save({"model":model.state_dict(),"optimizer":optimizer.state_dict(),
                              "scheduler":scheduler.state_dict() if scheduler else None},save_path)
         except Exception:
@@ -28,7 +28,6 @@ def train_model(model, dataloader, criterion, optimizer, device, epochs=10,
             atomic_save({"model":model.state_dict(),"optimizer":optimizer.state_dict()},save_path+".crash")
             raise 
         logger.info(f"Epoch {epoch+1} train | loss={train_loss:.4f} acc={train_acc:.4f}")
-        if wandb_run: wandb_run.log({"epoch":epoch+1,"train/loss":train_loss,"train/acc":train_acc})
         val_loss = None
         if val_dataloader: val_loss, val_acc = validate(model, val_dataloader, criterion, device, val_loss, wandb_run, epoch, scheduler, val_acc, optimizer, save_path, best_val_loss=float('inf'), patience=patience, patience_counter=0)
         if scheduler: schedule(scheduler, val_dataloader, val_loss)

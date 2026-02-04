@@ -7,7 +7,7 @@ import wandb
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-def train_one_epoch(model, dataloader, criterion, optimizer, device, grad_clip=None, logger=None, wandb_run=None):
+def train_one_epoch(model, dataloader, criterion, optimizer, device, grad_clip=None, logger=None, wandb_run=None, epoch=0):
     if logger is None:
         import logging
         logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ def train_one_epoch(model, dataloader, criterion, optimizer, device, grad_clip=N
         loss_sum += loss.item() * inputs.size(0)
         correct += (outputs.argmax(1) == labels).sum().item()
         total += labels.size(0)
-        if wandb_run: wandb_run.log({"epoch":epoch+1,"train/loss":train_loss,"train/acc":train_acc})
+        if wandb_run: wandb_run.log({"epoch":epoch+1,"train/loss":loss_sum/total,"train/acc":correct/total})
         logger.info(f"Batch {i+1}/{len(dataloader)} summary: loss={loss.item():.4f}, acc={(outputs.argmax(1)==labels).float().mean():.4f}")
     avg_loss = loss_sum / total
     avg_acc = correct / total

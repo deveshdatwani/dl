@@ -4,7 +4,7 @@ loss_fn: cross_entropy
 optimizer: sgd
 optimizer_params: {}           
 wandb_project: cifar-10-cnn
-wandb_plot_name: experiment_1
+wandb_plot_name: vgg16-training
 dataset_name: cifar10
 dataset_path: ./data/cifar-10-batches-py
 train_split: 0.8

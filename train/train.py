@@ -37,7 +37,7 @@ def main():
     if resp != 'y':
         logger.info("Aborted by user.")
         exit(0)
-    wandb_run = wandb.init(project=config['wandb']['project'], name=config['wandb']['plot_name'], config=config) if 'wandb' in config and config['wandb'].get('project') else None
+    wandb_run = wandb.init(project=config['wandb_project'], name=config['wandb_plot_name'], config=config) if 'wandb_project' in config and config['wandb_plot_name'] else None
     model = get_model(config['model_source'])
     loss_fn = get_loss_fn(typ=config['loss_fn'], optimizer_params=config.get('loss_params', {}))
     train_dataloader, test_dataloader = get_dataloaders(config['dataset_path'], config['dataset_name'], config['train_split'], config['batch_size'])
