@@ -20,7 +20,7 @@ def train_model(model, dataloader, criterion, optimizer, device, epochs=10,
     for epoch in range(epochs):
         logger.info(f"Epoch {epoch+1}/{epochs} start")
         try:
-            train_loss, train_acc = train_one_epoch(model, dataloader, criterion, optimizer, device, grad_clip=grad_clip)
+            train_loss, train_acc = train_one_epoch(model, dataloader, criterion, optimizer, device, grad_clip=grad_clip, wandb_run=wandb_run)
             atomic_save({"model":model.state_dict(),"optimizer":optimizer.state_dict(),
                              "scheduler":scheduler.state_dict() if scheduler else None},save_path)
         except Exception:
